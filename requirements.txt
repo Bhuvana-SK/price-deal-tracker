@@ -4,8 +4,26 @@ annotated-doc==0.0.6
     # via typer
 annotated-types==0.8.0
     # via pydantic
+anyio==4.16.0
+    # via httpx
+beautifulsoup4==4.15.0
+    # via price-deal-tracker
+certifi==2026.10.23
+    # via
+    #   httpcore
+    #   httpx
 colorama==0.4.6 ; sys_platform == 'win32'
     # via typer
+h11==0.16.0
+    # via httpcore
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via price-deal-tracker
+idna==3.20
+    # via
+    #   anyio
+    #   httpx
 markdown-it-py==4.3.0
     # via rich
 mdurl==0.1.2
@@ -29,12 +47,20 @@ rich==15.0.0
     # via typer
 shellingham==1.5.4
     # via typer
+soupsieve==2.10 ; python_full_version < '3.11.5'
+    # via beautifulsoup4
+soupsieve==4.1 ; python_full_version >= '3.11.5'
+    # via beautifulsoup4
 structlog==26.1.0
+    # via price-deal-tracker
+tenacity==9.2.1
     # via price-deal-tracker
 typer==0.29.1
     # via price-deal-tracker
 typing-extensions==4.16.0
     # via
+    #   anyio
+    #   beautifulsoup4
     #   pydantic
     #   pydantic-core
     #   pydantic-settings

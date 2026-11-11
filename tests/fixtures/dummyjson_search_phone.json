@@ -1,0 +1,28 @@
+{
+  "products": [
+    {
+      "id": 121,
+      "title": "iPhone 5s",
+      "category": "smartphones",
+      "price": 199.99,
+      "brand": "Apple",
+      "availabilityStatus": "In Stock"
+    },
+    {
+      "id": 122,
+      "title": "iPhone 6",
+      "category": "smartphones",
+      "price": 299.99,
+      "brand": "Apple",
+      "availabilityStatus": "Out of Stock"
+    },
+    {
+      "id": 999,
+      "category": "smartphones",
+      "price": 10.0
+    }
+  ],
+  "total": 3,
+  "skip": 0,
+  "limit": 5
+}
