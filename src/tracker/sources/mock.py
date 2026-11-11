@@ -114,6 +114,7 @@ class MockSource(Source):
     """Searches the synthetic catalogue; every product is sold by several stores."""
 
     name: ClassVar[str] = "mock"
+    supports_backfill: ClassVar[bool] = True
 
     def __init__(self, seed: int = 42, layout_version: int = 1) -> None:
         self.seed = seed

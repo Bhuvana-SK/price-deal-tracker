@@ -1,4 +1,7 @@
 .DEFAULT_GOAL := help
+# Use venv/ rather than .venv/: on macOS uv's .venv gets the hidden file flag and
+# Python then ignores its .pth files, so the editable package cannot be imported.
+export UV_PROJECT_ENVIRONMENT := venv
 .PHONY: help install lint format typecheck test check lock
 
 help: ## Show available commands

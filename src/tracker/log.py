@@ -24,9 +24,14 @@ def configure_logging(level: str = "INFO", fmt: str = "console") -> None:
             renderer,
         ],
         wrapper_class=structlog.make_filtering_bound_logger(logging.getLevelName(level)),
-        logger_factory=structlog.PrintLoggerFactory(file=sys.stderr),
+        logger_factory=_stderr_logger,
         cache_logger_on_first_use=False,
     )
+
+
+def _stderr_logger(*_args: Any) -> structlog.PrintLogger:
+    """Resolve sys.stderr at log time, so redirected/replaced streams are respected."""
+    return structlog.PrintLogger(sys.stderr)
 
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:

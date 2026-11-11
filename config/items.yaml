@@ -1,0 +1,43 @@
+# Demo watchlist. Load with `tracker seed`; add more with `tracker add-item`.
+# `mock` items have months of synthetic history (`tracker backfill`); the live
+# sources (dummyjson, books_toscrape) only collect from the day you start.
+items:
+  - item_id: auralis-nc700
+    name: Auralis NC700 headphones
+    query: auralis headphones
+    target_price: 215
+  - item_id: auralis-buds2
+    name: Auralis Buds 2 earbuds
+    query: auralis earbuds
+    target_price: 105
+  - item_id: kinetix-k8
+    name: Kinetix K8 phone (128GB)
+    query: kinetix phone
+    target_price: 520
+  - item_id: lumora-oled55
+    name: Lumora 55" OLED TV
+    query: lumora oled
+    target_price: 1050
+  - item_id: brewix-pro
+    name: Brewix Pro espresso machine
+    query: brewix espresso
+    target_price: 370
+  - item_id: stridex-run3
+    name: Stridex Run 3 running shoes
+    query: stridex running
+    target_price: 110
+  - item_id: voltra-v9
+    name: Voltra V9 robot vacuum
+    query: voltra vacuum
+    target_price: 320
+  - item_id: airpods-max-demo
+    name: AirPods Max (DummyJSON sample data)
+    query: https://dummyjson.com/products/101
+    target_price: 500
+    sources: [dummyjson]
+  - item_id: light-in-the-attic
+    name: A Light in the Attic (books.toscrape sandbox)
+    query: https://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html
+    target_price: 45
+    currency: GBP
+    sources: [books_toscrape]

@@ -44,6 +44,7 @@ class Source(ABC):
     """A place prices come from. Subclasses only implement `fetch`."""
 
     name: ClassVar[str]
+    supports_backfill: ClassVar[bool] = False  # can it return prices for past timestamps?
 
     @abstractmethod
     def fetch(self, queries: Sequence[ItemQuery], now: datetime | None = None) -> FetchResult:

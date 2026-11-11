@@ -22,6 +22,22 @@ class ItemQuery(BaseModel):
         return self.query.startswith(("http://", "https://"))
 
 
+class Item(BaseModel):
+    """A product the user tracks, with an optional target price."""
+
+    item_id: str = Field(pattern=r"^[a-z0-9][a-z0-9-]*$")
+    name: str
+    query: str
+    target_price: Decimal | None = Field(default=None, gt=0)
+    currency: str = "USD"
+    sources: list[str] = Field(default_factory=lambda: ["mock"], min_length=1)
+    active: bool = True
+
+    def to_query(self) -> ItemQuery:
+        """The query a source needs for this item."""
+        return ItemQuery(item_id=self.item_id, query=self.query)
+
+
 class RawListing(BaseModel):
     """A single price observation as parsed from a source, before validation."""
 
@@ -38,6 +54,11 @@ class RawListing(BaseModel):
     in_stock: bool = True
     fetched_at: datetime
     raw: dict[str, Any] = Field(default_factory=dict)
+
+    @property
+    def listing_id(self) -> str:
+        """Globally unique listing id: '<source>:<source_listing_id>'."""
+        return f"{self.source}:{self.source_listing_id}"
 
 
 class FetchResult(BaseModel):
