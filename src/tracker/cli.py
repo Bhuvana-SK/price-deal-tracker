@@ -19,6 +19,7 @@ from tracker.sources.base import utcnow
 from tracker.sources.mock import hourly
 from tracker.storage import repo
 from tracker.storage.db import connect
+from tracker.transform import run_dbt
 
 app = typer.Typer(help="Price & Deal Tracker", no_args_is_help=True, add_completion=False)
 
@@ -114,6 +115,42 @@ def backfill(
 
 
 @app.command()
+def transform(select: str | None = typer.Option(None, help="dbt node selector")) -> None:
+    """Build the silver/gold dbt models and run all data tests."""
+    outcome = run_dbt("build", select=select)
+    typer.echo(f"dbt build: success={outcome.success} {outcome.counts}")
+    for name in outcome.failures:
+        typer.echo(f"  failed: {name}")
+    if not outcome.success:
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def deals() -> None:
+    """Show each listing's current price and the 'is this really a deal?' verdict."""
+    with connect(read_only=True) as conn:
+        rows = conn.execute(
+            """
+            SELECT item_id, store, currency, current_price, avg_30d, min_90d, all_time_low,
+                   pct_vs_avg_30d, deal_flag, is_below_target, deal_reason
+            FROM gold.mart_listing_current
+            ORDER BY deal_flag DESC, pct_vs_avg_30d NULLS LAST
+            """
+        ).fetchall()
+    typer.echo(
+        f"{'item':<20} {'store':<15} {'price':>9} {'30d avg':>9} {'90d low':>9} {'ATL':>9} "
+        f"{'vs 30d':>7}  verdict"
+    )
+    for r in rows:
+        pct = f"{r[7] * 100:+.0f}%" if r[7] is not None else "-"
+        flags = ("DEAL " if r[8] else "") + ("<=TARGET " if r[9] else "")
+        typer.echo(
+            f"{r[0]:<20} {r[1]:<15} {r[3]:>9} {_fmt(r[4]):>9} {_fmt(r[5]):>9} {_fmt(r[6]):>9} "
+            f"{pct:>7}  {flags}{r[10]}"
+        )
+
+
+@app.command()
 def runs(limit: int = typer.Option(10)) -> None:
     """Show recent ingest runs and data-quality counters."""
     with connect() as conn:
@@ -158,6 +195,11 @@ def fetch(
         f"rejected={len(report.rejected)} parse_failures={result.parse_failures} "
         f"layout_broken={layout.broken} errors={len(result.errors)}"
     )
+
+
+def _fmt(value: object) -> str:
+    """Format an optional number with 2 decimals."""
+    return "-" if value is None else f"{float(value):.2f}"  # type: ignore[arg-type]
 
 
 def _print_run(run: repo.RunRecord) -> None:

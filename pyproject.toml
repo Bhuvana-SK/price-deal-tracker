@@ -13,6 +13,8 @@ dependencies = [
     "tenacity>=9.0",
     "beautifulsoup4>=4.12",
     "duckdb>=1.1",
+    "dbt-core>=1.9",
+    "dbt-duckdb>=1.9",
 ]
 
 [project.scripts]

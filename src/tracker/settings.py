@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     db_path: Path = Path("data/tracker.duckdb")
     items_file: Path = Path("config/items.yaml")
+    dbt_project_dir: Path = Path("dbt")
     # Observations of one listing inside the same window count as one (idempotency).
     check_window_hours: int = Field(default=1, ge=1, le=24)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"

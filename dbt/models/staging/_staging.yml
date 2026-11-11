@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_price_observations
+    description: Cleaned observations joined to the tracked item they belong to.
+    data_tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [item_id, observation_key]
+    columns:
+      - name: item_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_items')
+                field: item_id
+      - name: price
+        data_tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false
+      - name: shipping
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: total_cost
+        data_tests: [not_null]
+      - name: currency
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [USD, GBP]
+
+  - name: stg_items
+    columns:
+      - name: item_id
+        data_tests: [unique, not_null]
+      - name: target_price
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                inclusive: false

@@ -1,0 +1,28 @@
+name: price_tracker
+version: "1.0.0"
+config-version: 2
+profile: price_tracker
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: target
+clean-targets: [target, dbt_packages]
+
+vars:
+  # Deal rule. A listing is a "genuine deal" today when ALL of:
+  deal_min_discount_vs_30d: 0.10   # price is at least 10% below its 30-day average
+  deal_near_low_tolerance: 0.03    # and within 3% of its 90-day low
+  inflation_threshold: 0.15        # and it was NOT raised >15% above the 90d avg in the prior 14 days
+  min_history_days: 14             # and there are at least 14 days of history to judge by
+  # Smart alert thresholds
+  drop_24h_alert: 0.15             # dropped 15%+ in 24 hours
+
+models:
+  price_tracker:
+    staging:
+      +schema: silver
+      +materialized: view
+    marts:
+      +schema: gold
+      +materialized: table

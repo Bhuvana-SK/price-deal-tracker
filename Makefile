@@ -2,14 +2,21 @@
 # Use venv/ rather than .venv/: on macOS uv's .venv gets the hidden file flag and
 # Python then ignores its .pth files, so the editable package cannot be imported.
 export UV_PROJECT_ENVIRONMENT := venv
-.PHONY: help install lint format typecheck test check lock
+.PHONY: help install dbt-deps transform lint format typecheck test check lock
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
-install: ## Create .venv with pinned deps and install git hooks
+install: ## Create venv/ with pinned deps, dbt packages and git hooks
 	uv sync --frozen
+	$(MAKE) dbt-deps
 	uv run pre-commit install
+
+dbt-deps: ## Install dbt packages (dbt_utils)
+	cd dbt && uv run dbt deps --profiles-dir .
+
+transform: ## Build dbt models and run data tests
+	uv run tracker transform
 
 lock: ## Re-resolve dependencies and export pinned requirements files
 	uv lock

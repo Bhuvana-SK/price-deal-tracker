@@ -1,0 +1,8 @@
+price_tracker:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      # Same file the Python pipeline writes. Relative to where dbt is run (repo root).
+      path: "{{ env_var('TRACKER_DB_PATH', 'data/tracker.duckdb') }}"
+      threads: 4
