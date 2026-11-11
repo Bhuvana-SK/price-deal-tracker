@@ -25,3 +25,5 @@ select
 from observations as o
 inner join {{ source('app', 'item_listings') }} as il
     on o.listing_id = il.listing_id
+-- product matching can mark a search result as a different product (e.g. 256GB vs 128GB)
+where coalesce(il.is_match, true)

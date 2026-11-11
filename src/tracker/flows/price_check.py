@@ -16,6 +16,7 @@ from prefect import flow, task
 from tracker import orchestrate
 from tracker.alerts.engine import AlertReport
 from tracker.alerts.notifiers import build_notifiers
+from tracker.llm.listing_matcher import MatchSummary
 from tracker.settings import get_settings
 from tracker.storage import repo
 from tracker.storage.db import connect
@@ -26,6 +27,18 @@ from tracker.transform import DbtOutcome
 def ingest_task(name: str) -> repo.RunRecord:
     """Fetch, validate and load one source."""
     return orchestrate.ingest_source(name, build_notifiers(get_settings()))
+
+
+@task
+def match_task() -> MatchSummary:
+    """Exclude search results that are a different product (embeddings + rules + Claude)."""
+    return orchestrate.match_listings()
+
+
+@flow(name="weekly-digest", log_prints=True)
+def weekly_digest() -> str:
+    """Summarise what moved this week and send it through the alert channels."""
+    return orchestrate.weekly_digest(build_notifiers(get_settings())).text
 
 
 @task(retries=1, retry_delay_seconds=10)
@@ -51,6 +64,7 @@ def price_check() -> dict[str, object]:
             runs.append(ingest_task(name))
         except Exception as exc:  # after retries; keep going with the other sources
             print(f"source {name} failed after retries: {exc}")
+    match_task()
     dbt = dbt_task()
     alerts = alerts_task() if dbt.success else None
     return {

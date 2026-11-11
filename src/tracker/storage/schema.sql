@@ -116,3 +116,23 @@ CREATE TABLE IF NOT EXISTS app.alerts_sent (
     error       VARCHAR,
     sent_at     TIMESTAMP NOT NULL
 );
+
+-- ---------------------------------------------------------------- product matching
+ALTER TABLE app.item_listings ADD COLUMN IF NOT EXISTS is_match BOOLEAN DEFAULT TRUE;
+ALTER TABLE app.item_listings ADD COLUMN IF NOT EXISTS match_reason VARCHAR;
+
+-- Every matching decision, for auditing (and so the LLM is never asked twice).
+CREATE TABLE IF NOT EXISTS app.match_decisions (
+    item_id      VARCHAR NOT NULL,
+    listing_id   VARCHAR NOT NULL,
+    item_name    VARCHAR NOT NULL,
+    title        VARCHAR NOT NULL,
+    is_match     BOOLEAN NOT NULL,
+    method       VARCHAR NOT NULL,      -- rules | embedding | llm | embedding_fallback
+    similarity   DOUBLE,
+    confidence   DOUBLE,
+    reason       VARCHAR,
+    model        VARCHAR,
+    decided_at   TIMESTAMP NOT NULL,
+    PRIMARY KEY (item_id, listing_id)
+);

@@ -49,11 +49,15 @@ def run_alerts(
 
 
 def send_system_alert(
-    conn: Connection, notifiers: Sequence[Notifier], alert: Alert, now: datetime | None = None
+    conn: Connection,
+    notifiers: Sequence[Notifier],
+    alert: Alert,
+    now: datetime | None = None,
+    cooldown: timedelta = timedelta(hours=24),
 ) -> bool:
-    """Send an operational alert (layout change, dbt failure), at most once per cooldown."""
+    """Send an operational alert (layout change, dbt failure, digest), once per cooldown."""
     report = AlertReport(matched=1)
-    _dispatch(conn, alert, notifiers, now or utcnow(), report, cooldown=timedelta(hours=24))
+    _dispatch(conn, alert, notifiers, now or utcnow(), report, cooldown=cooldown)
     return bool(report.sent)
 
 

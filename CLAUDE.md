@@ -14,6 +14,8 @@ Portfolio data pipeline: collect prices → DuckDB (bronze/silver/gold) → dbt 
 - dbt lives in `dbt/`. Silver models are views in schema `silver`; gold models are tables in `gold`. Tunable thresholds are `vars` in `dbt_project.yml`; never hardcode them in SQL. After `run_dbt()` in a process, open DuckDB without `read_only`, because dbt-duckdb keeps its connection open.
 - The pipeline logic lives in `tracker.orchestrate` as plain functions. `tracker.flows` only wraps it in Prefect tasks, so test the logic, not Prefect.
 - `nanobind: leaked function` lines at the end of a test run come from DuckDB's bindings when Prefect's threads outlive the interpreter. They're harmless and don't change the exit code.
+- LLM calls go only through `tracker.llm.client`: `messages.parse` with a Pydantic schema, and any failure (no key, API error, refusal, truncation) raises `LLMUnavailableError`. Every caller has a deterministic fallback, and tests use `tests/fakes.FakeLLM`, never the real API. The default model is `CLAUDE_MODEL` (Haiku 5.5).
+- Matching thresholds come from the dev split of `eval/data/product_pairs.csv`. Re-tune with `tracker eval-matching` and never tune on the test split. The pipeline compares listings with short item names, so it uses `match_item_floor`, not `match_low`.
 - Config comes only from `tracker.settings.get_settings()`. Secrets are `SecretStr` and are never logged or hardcoded.
 - Log with `tracker.log.get_logger(__name__)` using event names plus key-value pairs (`log.info("rows_loaded", n=3)`), not f-strings.
 - Everything must run offline with no API keys: LLM and alert features need a deterministic fallback.

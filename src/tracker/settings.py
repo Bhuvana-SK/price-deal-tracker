@@ -22,6 +22,17 @@ class Settings(BaseSettings):
     # Alerts: repeat an alert only after the cooldown, or if the price fell by rearm_pct more.
     alert_cooldown_hours: int = Field(default=168, ge=1)
     alert_rearm_pct: Decimal = Field(default=Decimal("0.02"), ge=0, lt=1)
+    # Product matching (thresholds picked on the dev split: see eval/results/matching.md)
+    # "hashing" selects the no-download test embedder.
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    models_dir: Path = Path("data/models")
+    match_low: float = 0.813  # below: confidently different (keeps every dev-split match)
+    match_high: float = 1.01  # above: auto-accept. >1 means always verify with the LLM
+    match_fallback: float = 0.833  # no LLM: best-F1 threshold on the dev split
+    # Pipeline: a listing is compared with the (short) item *name*, which scores lower
+    # than title-vs-title; real item/listing pairs go down to ~0.79 and unrelated products
+    # sit near 0.50, so only exclude on similarity below this floor.
+    match_item_floor: float = 0.60
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     log_format: Literal["json", "console"] = "console"
     user_agent: str = "price-deal-tracker/0.1 (portfolio project; +https://github.com)"

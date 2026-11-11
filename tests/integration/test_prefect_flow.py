@@ -26,7 +26,10 @@ def seeded_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]
     monkeypatch.setenv("TRACKER_DB_PATH", str(path))
     get_settings.cache_clear()
     item = Item(
-        item_id="hp", name="Headphones", query="auralis headphones", target_price=Decimal("999")
+        item_id="hp",
+        name="Auralis NC700 headphones",
+        query="auralis headphones",
+        target_price=Decimal("999"),
     )
     end = utcnow().replace(minute=0, second=0, microsecond=0)
     with connect(path) as conn:

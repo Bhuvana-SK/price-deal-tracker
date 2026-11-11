@@ -3,6 +3,7 @@
 from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
+from typing import cast
 
 import typer
 
@@ -11,13 +12,20 @@ from tracker.alerts.models import Rule, RuleType
 from tracker.alerts.notifiers import build_notifiers
 from tracker.domain import Item, ItemQuery
 from tracker.evaluation.deal_backtest import run_backtest
+from tracker.evaluation.matching_eval import CachedLLM, run_matching_eval
+from tracker.evaluation.matching_eval import to_markdown as matching_markdown
 from tracker.ingest.layout_guard import check_layout
 from tracker.ingest.pipeline import run_ingest
 from tracker.ingest.validate import validate_all
 from tracker.items import load_items_file, slugify
+from tracker.llm.client import default_llm
+from tracker.llm.embeddings import FastEmbedder
+from tracker.llm.listing_matcher import build_matcher, match_new_listings
+from tracker.llm.nl_rules import RuleParseError, parse_rule
 from tracker.log import configure_logging
 from tracker.orchestrate import alerts as orchestrate_alerts
 from tracker.orchestrate import run_pipeline
+from tracker.orchestrate import weekly_digest as orchestrate_digest
 from tracker.settings import get_settings
 from tracker.sources import SOURCE_NAMES, get_source
 from tracker.sources.base import utcnow
@@ -208,6 +216,11 @@ def run() -> None:
     report = run_pipeline()
     for r in report.runs:
         _print_run(r)
+    if report.matching:
+        m = report.matching
+        typer.echo(
+            f"matching: checked={m.checked} kept={m.kept} excluded={m.excluded} llm_calls={m.llm_calls}"
+        )
     if report.dbt:
         typer.echo(f"dbt build: success={report.dbt.success} {report.dbt.counts}")
     if report.alerts:
@@ -269,6 +282,77 @@ def alerts_log(limit: int = typer.Option(15)) -> None:
 
 
 @app.command()
+def match(
+    rescore: bool = typer.Option(False, help="Re-check every listing, not just new ones"),
+) -> None:
+    """Check that each listing a search found is really the tracked product."""
+    matcher = build_matcher()
+    mode = f"Claude ({matcher.llm.model})" if matcher.llm else "embeddings + rules (no API key)"
+    with connect() as conn:
+        s = match_new_listings(conn, matcher, rescore=rescore)
+        excluded = conn.execute(
+            "SELECT item_id, listing_id, match_reason FROM app.item_listings WHERE NOT is_match "
+            "ORDER BY item_id, listing_id"
+        ).fetchall()
+    typer.echo(f"matcher: {mode}")
+    typer.echo(f"checked={s.checked} kept={s.kept} excluded={s.excluded} llm_calls={s.llm_calls}")
+    for item_id, listing_id, reason in excluded:
+        typer.echo(f"  excluded {listing_id:<28} from {item_id:<16} {reason}")
+
+
+@app.command("eval-matching")
+def eval_matching(
+    live: bool = typer.Option(False, help="Call Claude for pairs missing from the cache"),
+    out: Path = typer.Option(Path("eval/results/matching.md")),
+) -> None:
+    """Precision/recall of product matching on the labelled pairs (writes the README table)."""
+    settings = get_settings()
+    cache = Path("eval/results/llm_match_cache.json")
+    inner = default_llm() if live else None
+    if live and inner is None:
+        raise typer.BadParameter("--live needs ANTHROPIC_API_KEY")
+    llm = CachedLLM(inner, cache, settings.claude_model) if (inner or cache.exists()) else None
+    report = run_matching_eval(Path("eval/data/product_pairs.csv"), FastEmbedder(), llm)
+    table = matching_markdown(report)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(table, encoding="utf-8")
+    typer.echo(table)
+    typer.echo(f"written to {out}")
+
+
+@app.command()
+def rule(
+    request: str = typer.Argument(
+        ..., help='e.g. "tell me if the auralis headphones drop below $200"'
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Parse and show, but don't save"),
+) -> None:
+    """Create an alert rule from plain English."""
+    with connect() as conn:
+        items = repo.list_items(conn)
+        try:
+            parsed, method = parse_rule(request, items, default_llm())
+        except RuleParseError as exc:
+            typer.echo(f"could not create a rule: {exc}")
+            raise typer.Exit(code=1) from exc
+        target = parsed.item_id or "all items"
+        threshold = "" if parsed.threshold is None else f" threshold={parsed.threshold}"
+        typer.echo(f"parsed ({method}): {parsed.rule_type.value} for {target}{threshold}")
+        if not dry_run:
+            repo.add_rule(conn, parsed, utcnow(), raw_text=request, via=f"nl:{method}")
+            typer.echo(f"saved as {parsed.rule_id}")
+
+
+@app.command()
+def digest(
+    send: bool = typer.Option(False, help="Also send it through the alert channels"),
+) -> None:
+    """Write the weekly 'what moved' digest (Claude if a key is set, else a template)."""
+    d = orchestrate_digest(build_notifiers(get_settings()) if send else None, send=send)
+    typer.echo(f"[{d.method}]\n{d.text}")
+
+
+@app.command()
 def backtest(
     days: int = typer.Option(365, min=60, max=730),
     out: Path = typer.Option(Path("eval/results/deal_backtest.md")),
@@ -280,11 +364,24 @@ def backtest(
 
 
 @app.command()
-def serve(cron: str = typer.Option("0 */6 * * *", help="Cron schedule (UTC)")) -> None:
-    """Run the Prefect flow on a schedule (blocks; Ctrl+C to stop)."""
-    from tracker.flows.price_check import price_check
+def serve(
+    cron: str = typer.Option("0 */6 * * *", help="Price-check schedule (cron, UTC)"),
+    digest_cron: str = typer.Option("0 8 * * 1", help="Weekly digest schedule (cron, UTC)"),
+) -> None:
+    """Run the Prefect flows on a schedule (blocks; Ctrl+C to stop)."""
+    from prefect import serve as prefect_serve
+    from prefect.deployments.runner import RunnerDeployment
 
-    price_check.serve(name="price-check-scheduled", cron=cron)
+    from tracker.flows.price_check import price_check, weekly_digest
+
+    # to_deployment() is typed sync-or-async; called from sync code it returns a deployment.
+    prefect_serve(
+        cast(RunnerDeployment, price_check.to_deployment(name="price-check-scheduled", cron=cron)),
+        cast(
+            RunnerDeployment,
+            weekly_digest.to_deployment(name="weekly-digest-scheduled", cron=digest_cron),
+        ),
+    )
 
 
 def _fmt(value: object) -> str:

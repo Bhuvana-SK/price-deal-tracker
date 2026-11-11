@@ -21,8 +21,15 @@ from tracker.storage.db import connect
 pytestmark = pytest.mark.integration
 ITEMS = [
     # target far above any price, so the target rule always fires
-    Item(item_id="hp", name="Headphones", query="auralis headphones", target_price=Decimal("999")),
-    Item(item_id="tv", name="TV", query="lumora oled", target_price=Decimal("5000")),
+    Item(
+        item_id="hp",
+        name="Auralis NC700 headphones",
+        query="auralis headphones",
+        target_price=Decimal("999"),
+    ),
+    Item(
+        item_id="tv", name='Lumora 55" OLED TV', query="lumora oled", target_price=Decimal("5000")
+    ),
 ]
 
 

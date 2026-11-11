@@ -1,0 +1,85 @@
+pair_id,title_a,title_b,label,kind
+1,Auralis NC700 Wireless Noise Cancelling Headphones - Black,AURALIS NC-700 Over-Ear ANC Bluetooth Headphones (Black),1,reworded
+2,Auralis NC700 Wireless Noise Cancelling Headphones - Black,"Auralis NC700 Headphones, Wireless, Noise Cancelling",1,reworded
+3,Auralis NC700 Wireless Headphones - Black,Auralis NC700 Wireless Headphones - Silver,0,variant_color
+4,Auralis NC700 Noise Cancelling Headphones,Auralis NC500 Noise Cancelling Headphones,0,different_model
+5,Auralis NC700 Wireless Headphones,Replacement Ear Pads for Auralis NC700 Headphones,0,accessory
+6,Auralis NC700 Over-Ear Headphones,Auralis NC700 Headphones (Renewed),0,condition
+7,AURALIS NC700 ANC HEADPHONES BLK,"Auralis NC700 Noise-Cancelling Headphones, Black",1,abbreviated
+8,Auralis Buds 2 True Wireless Earbuds,Auralis Buds2 TWS In-Ear Earbuds w/ Charging Case,1,reworded
+9,Auralis Buds 2 Wireless Earbuds - White,Auralis Buds 2 True Wireless Earbuds,1,reworded
+10,Auralis Buds 2 Wireless Earbuds,Auralis Buds 2 Pro Wireless Earbuds,0,different_model
+11,Auralis Buds 2 Earbuds,Auralis Buds 2 Charging Case Only,0,accessory
+12,Auralis Buds 2 True Wireless Earbuds,Auralis Buds 3 True Wireless Earbuds,0,generation
+13,Kinetix K8 Smartphone 128GB - Graphite,"Kinetix K8 5G 128 GB Unlocked Phone, Graphite",1,reworded
+14,Kinetix K8 Smartphone 128GB - Graphite,"KINETIX K8 (128GB, Graphite) Unlocked",1,reworded
+15,Kinetix K8 Smartphone 128GB - Graphite,Kinetix K8 Smartphone 256GB - Graphite,0,variant_storage
+16,"Kinetix K8 5G 128 GB Unlocked Phone, Graphite","Kinetix K8 5G 256 GB Unlocked Phone, Graphite",0,variant_storage
+17,Kinetix K8 128GB Graphite,Kinetix K8 128GB Glacier Blue,0,variant_color
+18,Kinetix K8 Smartphone 128GB,Kinetix K8 Plus Smartphone 128GB,0,different_model
+19,Kinetix K8 Smartphone 128GB,Kinetix K8 Clear Case with MagGrip,0,accessory
+20,"KINETIX K8 (256GB, Graphite) Unlocked",Kinetix K8 Smartphone 256GB - Graphite,1,reworded
+21,Kinetix K8 128GB Unlocked,Kinetix K8 128GB Carrier Locked (NetOne),0,variant_carrier
+22,Kinetix K7 Smartphone 128GB,Kinetix K8 Smartphone 128GB,0,generation
+23,"Lumora 55"" OLED 4K Smart TV (2026)",Lumora OLED55 55-Inch 4K UHD Smart Television,1,reworded
+24,"Lumora 55"" OLED 4K Smart TV (2026)",Lumora 55 inch OLED TV - 2026 Model,1,reworded
+25,"Lumora 55"" OLED 4K Smart TV (2026)","Lumora 65"" OLED 4K Smart TV (2026)",0,variant_size
+26,"Lumora 55"" OLED 4K Smart TV (2026)","Lumora 55"" OLED 4K Smart TV (2025)",0,generation
+27,Lumora OLED55 55-Inch 4K TV,Lumora QLED55 55-Inch 4K TV,0,different_model
+28,"Lumora 55"" OLED TV",Wall Mount Bracket for Lumora 55 inch TVs,0,accessory
+29,LUMORA OLED 55IN 4K SMART TV 2026,"Lumora 55"" OLED 4K Smart TV (2026)",1,abbreviated
+30,Brewix Pro Espresso Machine with Milk Frother,"BREWIX Pro Semi-Automatic Espresso Maker, Stainless",1,reworded
+31,Brewix Pro Espresso Machine with Milk Frother,Brewix Pro Espresso & Cappuccino Machine,1,reworded
+32,Brewix Pro Espresso Machine,Brewix Lite Espresso Machine,0,different_model
+33,Brewix Pro Espresso Machine,Brewix Pro Water Filter Cartridges (3-Pack),0,accessory
+34,Brewix Pro Espresso Machine - Stainless,Brewix Pro Espresso Machine - Matte Black,0,variant_color
+35,Brewix Pro Espresso Machine,Brewix Pro Espresso Machine + Grinder Bundle,0,bundle
+36,Stridex Run 3 Men's Running Shoes,Stridex RUN3 Road Running Shoe (Men's),1,reworded
+37,Stridex Run 3 Men's Running Shoes,Stridex Run 3 Running Sneakers - Mens,1,reworded
+38,Stridex Run 3 Men's Running Shoes,Stridex Run 3 Women's Running Shoes,0,variant_gender
+39,Stridex Run 3 Running Shoes,Stridex Run 4 Running Shoes,0,generation
+40,Stridex Run 3 Men's Running Shoes,Stridex Trail 3 Men's Running Shoes,0,different_model
+41,Stridex Run 3 Running Shoes,Stridex Performance Running Socks (3 Pairs),0,accessory
+42,Voltra V9 Robot Vacuum with Self-Empty Base,Voltra V9 Robotic Vacuum Cleaner + Auto-Empty Dock,1,reworded
+43,Voltra V9 Robot Vacuum with Self-Empty Base,"Voltra Robot Vacuum V9, Self Emptying",1,reworded
+44,Voltra V9 Robot Vacuum with Self-Empty Base,Voltra V9 Robot Vacuum (No Base),0,bundle
+45,Voltra V9 Robot Vacuum,Voltra V7 Robot Vacuum,0,different_model
+46,Voltra V9 Robot Vacuum,Replacement Side Brushes for Voltra V9,0,accessory
+47,VOLTRA V9 ROBOT VAC W/ SELF EMPTY,Voltra V9 Robotic Vacuum Cleaner + Auto-Empty Dock,1,abbreviated
+48,"Novapad 11 Tablet 256GB Wi-Fi, Space Grey","NovaPad 11-inch Tablet (Wi-Fi, 256 GB) - Space Gray",1,reworded
+49,Novapad 11 Tablet 256GB Wi-Fi,Novapad 11 Tablet 256GB Wi-Fi + Cellular,0,variant_connectivity
+50,Novapad 11 Tablet 256GB,Novapad 11 Tablet 512GB,0,variant_storage
+51,Novapad 11 Tablet 256GB,Novapad 13 Tablet 256GB,0,variant_size
+52,Novapad 11 Tablet,Novapad 11 Keyboard Folio Case,0,accessory
+53,Novapad 11 (2026) 256GB Wi-Fi Tablet,"Novapad 11 Tablet 256GB Wi-Fi, Space Grey",1,reworded
+54,"Glidewave 27"" 4K IPS Monitor GW27U",Glidewave GW27U 27-inch UHD IPS Display,1,reworded
+55,Glidewave GW27U 27-inch 4K Monitor,Glidewave GW27Q 27-inch QHD Monitor,0,different_model
+56,Glidewave GW27U 27-inch 4K Monitor,Glidewave GW32U 32-inch 4K Monitor,0,variant_size
+57,Glidewave GW27U Monitor,Glidewave GW27U Monitor Arm Mount,0,accessory
+58,GLIDEWAVE GW27U 27IN UHD MONITOR,"Glidewave 27"" 4K IPS Monitor GW27U",1,abbreviated
+59,"Ferro 12-inch Cast Iron Skillet, Pre-Seasoned",Ferro Pre-Seasoned Cast Iron Frying Pan 12 in,1,reworded
+60,Ferro 12-inch Cast Iron Skillet,Ferro 10-inch Cast Iron Skillet,0,variant_size
+61,Ferro 12-inch Cast Iron Skillet,Ferro 12-inch Cast Iron Skillet with Lid,0,bundle
+62,Ferro 12-inch Cast Iron Skillet,Ferro 12-inch Carbon Steel Skillet,0,different_model
+63,Ferro 12in Cast Iron Skillet Pre Seasoned,"Ferro 12-inch Cast Iron Skillet, Pre-Seasoned",1,abbreviated
+64,Pixelor Z50 Mirrorless Camera Body,Pixelor Z50 Mirrorless Digital Camera (Body Only),1,reworded
+65,Pixelor Z50 Mirrorless Camera Body,Pixelor Z50 Mirrorless Camera with 18-55mm Lens Kit,0,bundle
+66,Pixelor Z50 Mirrorless Camera,Pixelor Z50 II Mirrorless Camera,0,generation
+67,Pixelor Z50 Camera Body,Pixelor EN-EL25 Battery for Z50,0,accessory
+68,Pixelor Z50 Body Only,PIXELOR Z-50 MIRRORLESS BODY,1,abbreviated
+69,"Hearthly 6-Quart Air Fryer, Black",Hearthly 6 Qt Digital Air Fryer - Black,1,reworded
+70,Hearthly 6-Quart Air Fryer,Hearthly 8-Quart Air Fryer,0,variant_size
+71,Hearthly 6-Quart Air Fryer,Hearthly 6-Quart Air Fryer Oven with Rotisserie,0,different_model
+72,Hearthly 6-Quart Air Fryer,Silicone Liners for Hearthly 6 Qt Air Fryer (2-Pack),0,accessory
+73,"Hearthly 6-Quart Air Fryer, Black","Hearthly 6-Quart Air Fryer, Stainless",0,variant_color
+74,Auralis NC700 Wireless Noise Cancelling Headphones,Sonique Q45 Wireless Noise Cancelling Headphones,0,different_brand
+75,Kinetix K8 Smartphone 128GB,Zenphone Z8 Smartphone 128GB,0,different_brand
+76,Hearthly 6-Quart Air Fryer,Crispera 6-Quart Air Fryer,0,different_brand
+77,Brewix Pro Espresso Machine,Voltra V9 Robot Vacuum,0,unrelated
+78,"Lumora 55"" OLED 4K Smart TV","Vistaline 55"" OLED 4K Smart TV",0,different_brand
+79,"Novapad 11 Tablet, 256GB, Wi-Fi, Space Grey (2026)",2026 Novapad 11 256GB WiFi Space Gray Tablet,1,reordered
+80,Kinetix K8 Smartphone - Graphite - 128GB - Unlocked,Unlocked Kinetix K8 Phone 128 GB Graphite,1,reordered
+81,Glidewave GW27U,Glidewave GW27U 27-inch 4K UHD IPS Monitor with USB-C,1,sparse
+82,Pixelor Z50 Mirrorless Camera Body - Black,"Pixelor Z50 Camera, Body Only, Black",1,reworded
+83,Ferro 12-inch Cast Iron Skillet,"Ferro Cast Iron Skillet Set (8, 10, 12 inch)",0,bundle
+84,Voltra V9 Robot Vacuum with Self-Empty Base,Voltra V9+ Robot Vacuum with Self-Empty Base,0,different_model
