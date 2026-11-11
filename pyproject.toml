@@ -16,6 +16,7 @@ dependencies = [
     "dbt-core>=1.9",
     "dbt-duckdb>=1.9",
     "prefect>=3.1",
+    "streamlit>=1.40",
 ]
 
 [project.scripts]
@@ -64,3 +65,6 @@ markers = [
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["typer.Option", "typer.Argument"]
+
+[tool.ruff.lint.per-file-ignores]
+"dashboard/*" = ["RUF001"]  # status icons (ℹ️ ⚠️ ✅) are intentional

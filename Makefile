@@ -2,7 +2,7 @@
 # Use venv/ rather than .venv/: on macOS uv's .venv gets the hidden file flag and
 # Python then ignores its .pth files, so the editable package cannot be imported.
 export UV_PROJECT_ENVIRONMENT := venv
-.PHONY: help install dbt-deps transform run flow serve backtest lint format typecheck test check lock
+.PHONY: help install dbt-deps transform run flow serve backtest demo dashboard lint format typecheck test check lock
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -29,6 +29,15 @@ serve: ## Run the Prefect flow every 6 hours (blocks)
 
 backtest: ## Deal rule vs. naive baselines -> eval/results/deal_backtest.md
 	uv run tracker backtest
+
+demo: ## Fresh demo DB: seed items, 120 days of mock history, dbt, one alert pass
+	uv run tracker init-db
+	uv run tracker seed
+	uv run tracker backfill --days 120
+	uv run tracker run
+
+dashboard: ## Open the Streamlit dashboard on http://localhost:8501
+	uv run streamlit run dashboard/app.py
 
 lock: ## Re-resolve dependencies and export pinned requirements files
 	uv lock
