@@ -25,6 +25,7 @@ from tracker.sources.base import Source, parse_money, utcnow
 from tracker.sources.mock_catalog import CATALOG, STORES, Product, Store
 
 EPOCH = date(2025, 1, 1)
+DEFAULT_SEED = 42
 HORIZON_DAYS = 3 * 365
 EventKind = Literal["genuine_deal", "inflated", "fake_deal"]
 
@@ -116,7 +117,7 @@ class MockSource(Source):
     name: ClassVar[str] = "mock"
     supports_backfill: ClassVar[bool] = True
 
-    def __init__(self, seed: int = 42, layout_version: int = 1) -> None:
+    def __init__(self, seed: int = DEFAULT_SEED, layout_version: int = 1) -> None:
         self.seed = seed
         self.layout_version = layout_version
 

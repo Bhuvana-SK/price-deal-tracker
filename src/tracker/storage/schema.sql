@@ -85,3 +85,34 @@ CREATE TABLE IF NOT EXISTS bronze.rejected_observations (
     fetched_at       TIMESTAMP NOT NULL,
     detected_at      TIMESTAMP NOT NULL
 );
+
+-- ---------------------------------------------------------------- alerts
+-- Custom alert rules (the built-in target / 90-day-low / 24h-drop / deal rules
+-- live in code). item_id NULL = applies to every item.
+CREATE TABLE IF NOT EXISTS app.rules (
+    rule_id      VARCHAR PRIMARY KEY,
+    item_id      VARCHAR,
+    rule_type    VARCHAR NOT NULL,       -- below_price | pct_drop_24h | low_90d | genuine_deal
+    threshold    DECIMAL(12, 4),
+    raw_text     VARCHAR,                -- the natural-language request, if any
+    created_via  VARCHAR NOT NULL DEFAULT 'cli',
+    active       BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at   TIMESTAMP NOT NULL
+);
+
+-- Every alert we tried to send. Used for de-duplication and as an audit log.
+-- subject_id is an item_id, or 'source:<name>' for system alerts.
+CREATE TABLE IF NOT EXISTS app.alerts_sent (
+    alert_key   VARCHAR PRIMARY KEY,
+    subject_id  VARCHAR NOT NULL,
+    rule_id     VARCHAR NOT NULL,
+    rule_type   VARCHAR NOT NULL,
+    listing_id  VARCHAR,
+    price       DECIMAL(12, 2),
+    currency    VARCHAR,
+    message     VARCHAR NOT NULL,
+    channels    VARCHAR[] NOT NULL,
+    status      VARCHAR NOT NULL,        -- sent | failed
+    error       VARCHAR,
+    sent_at     TIMESTAMP NOT NULL
+);

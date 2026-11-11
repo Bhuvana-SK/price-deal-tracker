@@ -4,9 +4,11 @@ import hashlib
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
+from tracker.alerts.dedupe import LastSent
+from tracker.alerts.models import Alert, ListingState, Rule
 from tracker.domain import Item, RawListing, Rejection
 from tracker.storage.db import Connection, bulk_insert, to_db_ts
 
@@ -253,3 +255,96 @@ def _unique_by_key(listings: Sequence[RawListing], window_hours: int) -> list[Ra
 def _count_for_run(conn: Connection, table: str, run_id: str) -> int:
     row = conn.execute(f"SELECT count(*) FROM {table} WHERE run_id = ?", [run_id]).fetchone()
     return int(row[0]) if row else 0
+
+
+# ------------------------------------------------------------------------------ alerts
+_STATE_COLUMNS = (
+    "item_id, item_name, listing_id, store, title, url, currency, current_price, "
+    "current_total_cost, in_stock, as_of, target_price, pct_drop_24h, avg_30d, min_90d, "
+    "all_time_low, is_90d_low, has_enough_history, deal_flag, deal_reason"
+)
+
+
+def current_listing_states(conn: Connection) -> list[ListingState]:
+    """Read gold.mart_listing_current (built by dbt)."""
+    cursor = conn.execute(f"SELECT {_STATE_COLUMNS} FROM gold.mart_listing_current")
+    names = [d[0] for d in cursor.description]
+    return [ListingState(**dict(zip(names, row, strict=True))) for row in cursor.fetchall()]
+
+
+def list_rules(conn: Connection) -> list[Rule]:
+    """Active custom rules."""
+    rows = conn.execute(
+        "SELECT rule_id, rule_type, item_id, threshold FROM app.rules WHERE active ORDER BY rule_id"
+    ).fetchall()
+    return [Rule(rule_id=r[0], rule_type=r[1], item_id=r[2], threshold=r[3]) for r in rows]
+
+
+def add_rule(
+    conn: Connection, rule: Rule, now: datetime, raw_text: str | None = None, via: str = "cli"
+) -> None:
+    """Insert or replace a custom rule."""
+    conn.execute(
+        """
+        INSERT INTO app.rules (rule_id, item_id, rule_type, threshold, raw_text, created_via, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (rule_id) DO UPDATE SET item_id = excluded.item_id,
+            rule_type = excluded.rule_type, threshold = excluded.threshold,
+            raw_text = excluded.raw_text, active = TRUE
+        """,
+        [
+            rule.rule_id,
+            rule.item_id,
+            rule.rule_type.value,
+            rule.threshold,
+            raw_text,
+            via,
+            to_db_ts(now),
+        ],
+    )
+
+
+def last_sent_alert(conn: Connection, subject_id: str, rule_id: str) -> LastSent | None:
+    """Most recent *successful* alert for this subject and rule."""
+    row = conn.execute(
+        "SELECT price, sent_at FROM app.alerts_sent WHERE subject_id = ? AND rule_id = ? "
+        "AND status = 'sent' ORDER BY sent_at DESC LIMIT 1",
+        [subject_id, rule_id],
+    ).fetchone()
+    return LastSent(price=row[0], sent_at=row[1].replace(tzinfo=UTC)) if row else None
+
+
+def record_alert(
+    conn: Connection,
+    *,
+    key: str,
+    alert: Alert,
+    channels: Sequence[str],
+    status: str,
+    error: str | None,
+    now: datetime,
+) -> None:
+    """Log a send attempt. A later retry of a failed alert overwrites its row."""
+    conn.execute(
+        """
+        INSERT INTO app.alerts_sent (alert_key, subject_id, rule_id, rule_type, listing_id, price,
+                                     currency, message, channels, status, error, sent_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (alert_key) DO UPDATE SET channels = excluded.channels,
+            status = excluded.status, error = excluded.error, sent_at = excluded.sent_at
+        """,
+        [
+            key,
+            alert.subject_id,
+            alert.rule_id,
+            alert.rule_type,
+            alert.listing_id,
+            alert.price,
+            alert.currency,
+            alert.text(),
+            list(channels),
+            status,
+            error,
+            to_db_ts(now),
+        ],
+    )

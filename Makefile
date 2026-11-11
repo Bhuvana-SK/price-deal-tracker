@@ -2,7 +2,7 @@
 # Use venv/ rather than .venv/: on macOS uv's .venv gets the hidden file flag and
 # Python then ignores its .pth files, so the editable package cannot be imported.
 export UV_PROJECT_ENVIRONMENT := venv
-.PHONY: help install dbt-deps transform lint format typecheck test check lock
+.PHONY: help install dbt-deps transform run flow serve backtest lint format typecheck test check lock
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -17,6 +17,18 @@ dbt-deps: ## Install dbt packages (dbt_utils)
 
 transform: ## Build dbt models and run data tests
 	uv run tracker transform
+
+run: ## One pipeline run: ingest all sources -> dbt -> alerts
+	uv run tracker run
+
+flow: ## The same pipeline as a Prefect flow run
+	uv run python -m tracker.flows.price_check
+
+serve: ## Run the Prefect flow every 6 hours (blocks)
+	uv run tracker serve
+
+backtest: ## Deal rule vs. naive baselines -> eval/results/deal_backtest.md
+	uv run tracker backtest
 
 lock: ## Re-resolve dependencies and export pinned requirements files
 	uv lock

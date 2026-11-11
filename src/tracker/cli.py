@@ -7,12 +7,17 @@ from pathlib import Path
 import typer
 
 from tracker import __version__
+from tracker.alerts.models import Rule, RuleType
+from tracker.alerts.notifiers import build_notifiers
 from tracker.domain import Item, ItemQuery
+from tracker.evaluation.deal_backtest import run_backtest
 from tracker.ingest.layout_guard import check_layout
 from tracker.ingest.pipeline import run_ingest
 from tracker.ingest.validate import validate_all
 from tracker.items import load_items_file, slugify
 from tracker.log import configure_logging
+from tracker.orchestrate import alerts as orchestrate_alerts
+from tracker.orchestrate import run_pipeline
 from tracker.settings import get_settings
 from tracker.sources import SOURCE_NAMES, get_source
 from tracker.sources.base import utcnow
@@ -195,6 +200,91 @@ def fetch(
         f"rejected={len(report.rejected)} parse_failures={result.parse_failures} "
         f"layout_broken={layout.broken} errors={len(result.errors)}"
     )
+
+
+@app.command()
+def run() -> None:
+    """The scheduled job, without Prefect: ingest every source → dbt build → alerts."""
+    report = run_pipeline()
+    for r in report.runs:
+        _print_run(r)
+    if report.dbt:
+        typer.echo(f"dbt build: success={report.dbt.success} {report.dbt.counts}")
+    if report.alerts:
+        a = report.alerts
+        typer.echo(
+            f"alerts: matched={a.matched} sent={len(a.sent)} "
+            f"suppressed(duplicates)={a.suppressed} failed={a.failed}"
+        )
+    if not report.ok:
+        raise typer.Exit(code=1)
+
+
+@app.command("alerts")
+def alerts_cmd() -> None:
+    """Evaluate alert rules on the current gold tables and send new alerts."""
+    a = orchestrate_alerts(build_notifiers(get_settings()))
+    typer.echo(
+        f"matched={a.matched} sent={len(a.sent)} suppressed={a.suppressed} failed={a.failed}"
+    )
+
+
+@app.command("add-rule")
+def add_rule(
+    rule_type: RuleType = typer.Argument(
+        ..., help="below_price | pct_drop_24h | low_90d | genuine_deal"
+    ),
+    item: str | None = typer.Option(None, "--item", "-i", help="Item id (default: all items)"),
+    threshold: float | None = typer.Option(
+        None, "--threshold", "-t", help="Price, or fraction for drops"
+    ),
+) -> None:
+    """Add a custom alert rule."""
+    if rule_type is RuleType.BELOW_PRICE and threshold is None:
+        raise typer.BadParameter("below_price needs --threshold")
+    rule = Rule(
+        rule_id=f"custom:{rule_type.value}:{item or 'all'}:{threshold or ''}",
+        rule_type=rule_type,
+        item_id=item,
+        threshold=Decimal(str(threshold)) if threshold is not None else None,
+    )
+    with connect() as conn:
+        repo.add_rule(conn, rule, utcnow())
+    typer.echo(f"added {rule.rule_id}")
+
+
+@app.command("alerts-log")
+def alerts_log(limit: int = typer.Option(15)) -> None:
+    """Show recently sent (or failed) alerts."""
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT sent_at, status, rule_id, subject_id, price, channels FROM app.alerts_sent "
+            "ORDER BY sent_at DESC LIMIT ?",
+            [limit],
+        ).fetchall()
+    for r in rows:
+        typer.echo(
+            f"{r[0]:%Y-%m-%d %H:%M}  {r[1]:<6} {r[2]:<28} {r[3]:<20} {r[4]}  {','.join(r[5])}"
+        )
+
+
+@app.command()
+def backtest(
+    days: int = typer.Option(365, min=60, max=730),
+    out: Path = typer.Option(Path("eval/results/deal_backtest.md")),
+    db: Path = typer.Option(Path("data/backtest.duckdb")),
+) -> None:
+    """Score the deal rule vs. naive baselines on mock history with planted ground truth."""
+    typer.echo(run_backtest(db, get_settings().items_file, days, out))
+    typer.echo(f"written to {out}")
+
+
+@app.command()
+def serve(cron: str = typer.Option("0 */6 * * *", help="Cron schedule (UTC)")) -> None:
+    """Run the Prefect flow on a schedule (blocks; Ctrl+C to stop)."""
+    from tracker.flows.price_check import price_check
+
+    price_check.serve(name="price-check-scheduled", cron=cron)
 
 
 def _fmt(value: object) -> str:

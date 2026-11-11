@@ -1,5 +1,6 @@
 """Runtime configuration loaded from environment variables and an optional `.env` file."""
 
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -18,6 +19,9 @@ class Settings(BaseSettings):
     dbt_project_dir: Path = Path("dbt")
     # Observations of one listing inside the same window count as one (idempotency).
     check_window_hours: int = Field(default=1, ge=1, le=24)
+    # Alerts: repeat an alert only after the cooldown, or if the price fell by rearm_pct more.
+    alert_cooldown_hours: int = Field(default=168, ge=1)
+    alert_rearm_pct: Decimal = Field(default=Decimal("0.02"), ge=0, lt=1)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     log_format: Literal["json", "console"] = "console"
     user_agent: str = "price-deal-tracker/0.1 (portfolio project; +https://github.com)"
