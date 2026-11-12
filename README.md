@@ -6,10 +6,7 @@
 
 **An automated data pipeline that tracks product prices across stores, keeps the full price history, tells genuine deals apart from fake "discounts", and sends de-duplicated alerts, with a small LLM layer for product matching.**
 
-![Demo](docs/demo.gif)
-<!-- TODO: record a ~20s GIF of the dashboard (price history tab → deals tab) and save it as docs/demo.gif -->
-
-![Price history: three stores, genuine-deal days marked in green, target price dashed](docs/images/dashboard_price_history.png)
+![Dashboard tour: deal verdicts, price history with a multi-store tooltip, store comparison, data quality](docs/demo.gif)
 
 ---
 
@@ -229,3 +226,7 @@ tracker runs                                   # recent runs + rejection counts
 4. **Tune the deal rule on a separate validation period** and report on a later one, with a precision/recall curve rather than one point.
 5. **Durable state:** Parquet in object storage (or MotherDuck) instead of the Actions cache, and split the image into pipeline and dashboard images.
 6. **Price forecasting** ("wait or buy now?") evaluated against the same backtest, kept only if it beats the rule.
+
+## License
+
+[MIT](LICENSE)
