@@ -1,5 +1,9 @@
 # 🏷️ Price & Deal Tracker
 
+[![CI](https://github.com/Bhuvana-SK/price-deal-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/Bhuvana-SK/price-deal-tracker/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/python-3.11-blue)
+![dbt](https://img.shields.io/badge/dbt-duckdb-orange)
+
 **An automated data pipeline that tracks product prices across stores, keeps the full price history, tells genuine deals apart from fake "discounts", and sends de-duplicated alerts, with a small LLM layer for product matching.**
 
 ![Demo](docs/demo.gif)
@@ -30,7 +34,7 @@ Everything runs locally with **no accounts and no API keys**. All data is synthe
 **With Docker** (3 commands, then open http://localhost:8501):
 
 ```bash
-git clone <this-repo-url> price-deal-tracker && cd price-deal-tracker
+git clone https://github.com/Bhuvana-SK/price-deal-tracker.git && cd price-deal-tracker
 docker compose up --build      # creates the DB, backfills 120 days, starts scheduler + dashboard
 ```
 
