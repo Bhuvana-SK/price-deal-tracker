@@ -2,7 +2,7 @@
 # Use venv/ rather than .venv/: on macOS uv's .venv gets the hidden file flag and
 # Python then ignores its .pth files, so the editable package cannot be imported.
 export UV_PROJECT_ENVIRONMENT := venv
-.PHONY: help install dbt-deps transform run flow serve backtest demo dashboard lint format typecheck test check lock
+.PHONY: help install dbt-deps transform run flow serve backtest demo dashboard up down logs lint format typecheck test check lock
 
 help: ## Show available commands
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -18,13 +18,13 @@ dbt-deps: ## Install dbt packages (dbt_utils)
 transform: ## Build dbt models and run data tests
 	uv run tracker transform
 
-run: ## One pipeline run: ingest all sources -> dbt -> alerts
+run: ## One pipeline run: ingest all sources -> match -> dbt -> alerts
 	uv run tracker run
 
 flow: ## The same pipeline as a Prefect flow run
 	uv run python -m tracker.flows.price_check
 
-serve: ## Run the Prefect flow every 6 hours (blocks)
+serve: ## Prefect scheduler: price check every 6h, digest on Mondays (blocks)
 	uv run tracker serve
 
 backtest: ## Deal rule vs. naive baselines -> eval/results/deal_backtest.md
@@ -38,6 +38,15 @@ demo: ## Fresh demo DB: seed items, 120 days of mock history, dbt, one alert pas
 
 dashboard: ## Open the Streamlit dashboard on http://localhost:8501
 	uv run streamlit run dashboard/app.py
+
+up: ## Docker: build and start init + scheduler + dashboard (http://localhost:8501)
+	docker compose up -d --build
+
+down: ## Docker: stop the stack (data volume is kept)
+	docker compose down
+
+logs: ## Docker: follow the scheduler and dashboard logs
+	docker compose logs -f pipeline dashboard
 
 lock: ## Re-resolve dependencies and export pinned requirements files
 	uv lock

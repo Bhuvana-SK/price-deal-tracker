@@ -1,0 +1,89 @@
+# The lightweight alternative to running the Prefect scheduler yourself:
+# GitHub runs the pipeline every 6 hours (and the digest on Mondays). The DuckDB
+# file is carried between runs with the Actions cache. Optional repository
+# secrets: ANTHROPIC_API_KEY, DISCORD_WEBHOOK_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID.
+name: Scheduled price check
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # price check (off the hour to avoid the top-of-hour rush)
+    - cron: "0 8 * * 1"      # Monday 08:00 UTC: price check + weekly digest
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scheduled-price-check
+  cancel-in-progress: false   # never run two pipelines against the same DB
+
+env:
+  UV_PROJECT_ENVIRONMENT: venv
+  TRACKER_LOG_FORMAT: json
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install
+        run: |
+          uv python install 3.11
+          uv sync --frozen --no-dev
+          make dbt-deps
+
+      - name: Cache the local embedding model
+        uses: actions/cache@v4
+        with:
+          path: data/models
+          key: fastembed-bge-small-en-v1.5
+
+      - name: Restore the database from the previous run
+        uses: actions/cache/restore@v4
+        with:
+          path: data/tracker.duckdb
+          key: tracker-db-${{ github.run_id }}
+          restore-keys: tracker-db-
+
+      - name: First run only - create the DB and backfill mock history
+        run: |
+          if [ ! -f data/tracker.duckdb ]; then
+            uv run tracker init-db
+            uv run tracker seed
+            uv run tracker backfill --days 120
+          fi
+
+      - name: Pick up watchlist changes
+        run: uv run tracker seed
+
+      - name: Ingest -> match -> dbt build -> alerts
+        run: uv run tracker run
+
+      - name: Weekly digest
+        if: github.event.schedule == '0 8 * * 1'
+        run: uv run tracker digest --send
+
+      - name: Save the database for the next run
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data/tracker.duckdb
+          key: tracker-db-${{ github.run_id }}
+
+      - name: Upload the database (download it to explore locally)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tracker-duckdb
+          path: data/tracker.duckdb
+          retention-days: 7

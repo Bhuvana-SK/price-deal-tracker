@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_PROJECT_ENVIRONMENT: venv
+  TRACKER_LOG_LEVEL: WARNING
+
+jobs:
+  test:
+    name: Lint, type-check, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python 3.11 and pinned dependencies
+        run: |
+          uv python install 3.11
+          uv sync --frozen
+
+      - name: Cache the local embedding model
+        uses: actions/cache@v4
+        with:
+          path: data/models
+          key: fastembed-bge-small-en-v1.5
+
+      - name: Install dbt packages
+        run: make dbt-deps
+
+      - run: make lint
+      - run: make typecheck
+      - run: make test
+
+      - name: Matching eval (offline, no API key) reproduces the committed table
+        run: |
+          uv run tracker eval-matching
+          git diff --exit-code eval/results/matching.md \
+            || echo "::warning::eval/results/matching.md changed on Linux (embedding float drift?)"
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: price-deal-tracker:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

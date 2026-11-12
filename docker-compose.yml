@@ -1,0 +1,62 @@
+# docker compose up --build   ->  dashboard on http://localhost:8501
+#
+# init       one-off: create the DB, load the watchlist, backfill 120 days of mock
+#            history, run the pipeline once (skipped if the DB already has data)
+# pipeline   Prefect scheduler: price check every 6 hours, digest every Monday
+# dashboard  Streamlit (opens DuckDB read-only)
+
+x-tracker: &tracker
+  build: .
+  image: price-deal-tracker:latest
+  env_file:
+    - path: .env
+      required: false
+  volumes:
+    - tracker-data:/app/data
+
+services:
+  init:
+    <<: *tracker
+    command:
+      - sh
+      - -c
+      - |
+        tracker init-db && tracker seed
+        if [ "$$(python -c "import duckdb; print(duckdb.connect('data/tracker.duckdb').execute('select count(*) from bronze.raw_observations').fetchone()[0])")" = "0" ]; then
+          tracker backfill --days 120
+        fi
+        tracker run || true
+    restart: "no"
+
+  pipeline:
+    <<: *tracker
+    command: ["tracker", "serve"]
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  dashboard:
+    <<: *tracker
+    command:
+      - streamlit
+      - run
+      - dashboard/app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+      - --server.headless=true
+      - --browser.gatherUsageStats=false
+    ports:
+      - "8501:8501"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  tracker-data:

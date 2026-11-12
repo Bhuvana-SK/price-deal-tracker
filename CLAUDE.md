@@ -19,6 +19,8 @@ Portfolio data pipeline: collect prices → DuckDB (bronze/silver/gold) → dbt 
 - Config comes only from `tracker.settings.get_settings()`. Secrets are `SecretStr` and are never logged or hardcoded.
 - Log with `tracker.log.get_logger(__name__)` using event names plus key-value pairs (`log.info("rows_loaded", n=3)`), not f-strings.
 - Everything must run offline with no API keys: LLM and alert features need a deterministic fallback.
-- Tests never touch the network. Use saved files in `tests/fixtures/`.
+- Tests never touch the network; use saved files in `tests/fixtures/`. The one exception is the real-embedding test in `test_matching_pipeline.py`, which downloads the model once into `data/models/` (cached in CI). An autouse fixture forces the hashing embedder and removes `ANTHROPIC_API_KEY` everywhere else.
+- Docker: one image serves every compose service (`init`, `pipeline`, `dashboard`), and data lives on the `tracker-data` volume. CI (`.github/workflows/ci.yml`) runs `make lint typecheck test` and builds the image. `scheduled.yml` runs `tracker run` every 6 hours, carrying the DuckDB file between runs in the Actions cache.
+- Results in the README come from `make backtest` and `tracker eval-matching`. Regenerate them whenever the deal rule, the validator or the matcher changes.
 - Data is synthetic or public sample data only. No personal data.
 - Commits: one per build stage or feature, using an imperative subject (`Add idempotent bronze loader`).
