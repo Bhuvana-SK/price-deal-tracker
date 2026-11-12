@@ -88,6 +88,26 @@ def test_bad_prices_are_rejected_logged_and_counted(conn: Connection) -> None:
     assert clean[1] < 500  # no 100x spike got through
 
 
+def test_backfill_starting_on_a_glitch_does_not_poison_the_listing(conn: Connection) -> None:
+    """Regression: this window's first dealdepot TV price is a 100x spike (found via Docker)."""
+    tv = [Item(item_id="tv", name="Lumora 55 OLED TV", query="lumora oled")]
+    start = datetime(2026, 7, 15, 16, tzinfo=UTC)
+    run = run_ingest(
+        conn, MockSource(), tv, hourly(start, start + timedelta(days=30), 6), "backfill"
+    )
+    worst = conn.execute(
+        "SELECT max(n) FROM (SELECT count(*) AS n FROM bronze.rejected_observations GROUP BY listing_id)"
+    ).fetchone()
+    assert worst is not None
+    assert worst[0] <= 5  # only the planted glitches, not hundreds of good prices
+    assert run.rejected < 0.02 * run.attempted
+    top = conn.execute(
+        "SELECT max(price) FROM bronze.raw_observations WHERE listing_id = 'mock:dealdepot:LUM-OLED55'"
+    ).fetchone()
+    assert top is not None
+    assert top[0] < 5000  # no 100x price was ever accepted
+
+
 def test_spike_is_rejected_once_history_exists(conn: Connection) -> None:
     run_ingest(conn, MockSource(), ITEMS, hourly(T0, T0 + timedelta(days=5), step_hours=12))
     spike = make_listing(

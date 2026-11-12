@@ -1,15 +1,12 @@
 """One ingest run: fetch → validate → load, recorded in bronze.ingest_runs."""
 
-import statistics
-from collections import deque
 from collections.abc import Sequence
 from datetime import datetime
-from decimal import Decimal
 from uuid import uuid4
 
 from tracker.domain import Item, RawListing, Rejection
 from tracker.ingest.layout_guard import check_layout
-from tracker.ingest.validate import validate_all
+from tracker.ingest.reference import ReferenceTracker, validate_batch
 from tracker.log import get_logger
 from tracker.settings import get_settings
 from tracker.sources.base import Source, utcnow
@@ -17,26 +14,6 @@ from tracker.storage import repo
 from tracker.storage.db import Connection, transaction
 
 log = get_logger(__name__)
-
-
-class ReferenceTracker:
-    """Rolling median of each listing's recent accepted prices (for outlier checks)."""
-
-    def __init__(self, history: dict[str, list[Decimal]], window: int = 20) -> None:
-        self._window = window
-        self._prices = {lid: deque(p, maxlen=window) for lid, p in history.items()}
-
-    def reference(self, listing: RawListing) -> Decimal | None:
-        """Typical recent price for this listing, or None with no history."""
-        prices = self._prices.get(listing.listing_id)
-        return statistics.median(prices) if prices else None
-
-    def observe(self, listing: RawListing) -> None:
-        """Add an accepted price to the listing's window."""
-        if listing.price is not None:
-            self._prices.setdefault(listing.listing_id, deque(maxlen=self._window)).append(
-                listing.price
-            )
 
 
 def run_ingest(
@@ -67,9 +44,7 @@ def run_ingest(
         run.parse_failures += result.parse_failures
         run.layout_broken |= check_layout(result).broken
         errors += result.errors
-        report = validate_all(result.listings, tracker.reference)
-        for listing in report.accepted:
-            tracker.observe(listing)
+        report = validate_batch(result.listings, tracker)
         accepted += report.accepted
         rejected += report.rejected
 
